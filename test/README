@@ -1,0 +1,19 @@
+
+The following code works with this release
+exec1.c
+exec2.c
+exec-test2.c
+testvmfork.c
+
+The following code does not work without VM page replacement support
+testvm1.c
+testvm.c
+vm-test.c
+testvmexec.c
+testvmexec2.c*
+testvmfork1.c*
+
+The following *.expected files contain the expected output 
+
+exec-test1.expected  testvm1.expected      testvmexec.expected  testvmfork1.expected  vm-test.expected
+exec-test2.expected  testvmexec2.expected  testvm.expected      testvmfork.expected
