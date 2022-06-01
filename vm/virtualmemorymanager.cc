@@ -74,6 +74,7 @@ void VirtualMemoryManager::swapPageIn(int virtAddr)
                 currPageEntry->physicalPage = memoryManager->getPage();
 
                 if (currPageEntry->use == FALSE) {
+                    currPageEntry->valid = FALSE;
                     if (currPageEntry->dirty) {
                         writeToSwap((machine->mainMemory + currPageEntry->physicalPage * PageSize), PageSize, currPageEntry->locationOnDisk);
                     }
@@ -81,7 +82,7 @@ void VirtualMemoryManager::swapPageIn(int virtAddr)
                     break;
                 }
 
-                currPageEntry->valid = FALSE;
+                currPageEntry->use = FALSE;
                 nextVictim = (nextVictim + 1) % NumPhysPages;
             }
         } else {
