@@ -64,58 +64,34 @@ void VirtualMemoryManager::swapPageIn(int virtAddr)
 
         FrameInfo * physPageInfo = physicalMemoryInfo + nextVictim;
 
-        if (physPageInfo->space != NULL) {
-          TranslationEntry* pageToEject = physPageInfo->space->getPageTableEntry(physPageInfo->pageTableIndex);
-          while (pageToEject->use) {
-            pageToEject->use = FALSE;
+        if (physPageInfo->space != NULL){
+            TranslationEntry * ejectPage = physPageInfo->space->getPageTableEntry(physPageInfo->pageTableIndex);
+            while(ejectPage->use == TRUE){
+                nextVictim = (nextVictim + 1) % NumPhysPages;
+                ejectPage->use = FALSE;
+                physPageInfo = physicalMemoryInfo + nextVictim;
+                ejectPage = physPageInfo->space->getPageTableEntry(physPageInfo->pageTableIndex);
+            }
+            ejectPage->valid = FALSE;
+            if (ejectPage->dirty) {
+                char * writePage = machine->mainMemory + ejectPage->physicalPage * PageSize;
+                writeToSwap(writePage, PageSize, ejectPage->locationOnDisk);
+            }
+            physPageInfo->space = currentThread->space;
+            physPageInfo->pageTableIndex = virtAddr / PageSize;
+            currPageEntry = getPageTableEntry(physPageInfo);
+            currPageEntry->physicalPage = ejectPage->physicalPage;
+            loadPageToCurrVictim(virtAddr);
             nextVictim = (nextVictim + 1) % NumPhysPages;
-            physPageInfo = physicalMemoryInfo + nextVictim;  
-            pageToEject = physPageInfo->space->getPageTableEntry(physPageInfo->pageTableIndex);
-          }
-          pageToEject->valid = FALSE;
-          if (pageToEject->dirty) {
-            writeToSwap(machine->mainMemory + (pageToEject->physicalPage * PageSize), PageSize, pageToEject->locationOnDisk);
-          }
-          physPageInfo->space = currentThread->space;
-          physPageInfo->pageTableIndex = virtAddr / PageSize;
-          currPageEntry = getPageTableEntry(physPageInfo);
-          currPageEntry->physicalPage = pageToEject->physicalPage;
         } else {
-          physPageInfo->space = currentThread->space;
-          physPageInfo->pageTableIndex = virtAddr / PageSize;
-          currPageEntry = getPageTableEntry(physPageInfo);
-          currPageEntry->physicalPage = memoryManager->getPage();
+            //We assume this page is not occupied by any process space
+            physPageInfo->space = currentThread->space;
+            physPageInfo->pageTableIndex = virtAddr / PageSize;
+            currPageEntry = getPageTableEntry(physPageInfo);
+            currPageEntry->physicalPage = memoryManager->getPage();
+            loadPageToCurrVictim(virtAddr);
+            nextVictim = (nextVictim + 1) % NumPhysPages;
         }
-        loadPageToCurrVictim(virtAddr);
-        nextVictim = (nextVictim + 1) % NumPhysPages;
-        // if (physPageInfo->space != NULL){
-        //     TranslationEntry * ejectPage = physPageInfo->space->getPageTableEntry(physPageInfo->pageTableIndex);
-        //     while(ejectPage->use == TRUE){
-        //         nextVictim = (nextVictim + 1) % NumPhysPages;
-        //         ejectPage->use = FALSE;
-        //         physPageInfo = physicalMemoryInfo + nextVictim;
-        //         ejectPage = physPageInfo->space->getPageTableEntry(physPageInfo->pageTableIndex);
-        //     }
-        //     ejectPage->valid = FALSE;
-        //     if (ejectPage->dirty) {
-        //         char * writePage = machine->mainMemory + currPageEntry->physicalPage * PageSize;
-        //         writeToSwap(writePage, PageSize, ejectPage->locationOnDisk);
-        //     }
-        //     physPageInfo->space = currentThread->space;
-        //     physPageInfo->pageTableIndex = virtAddr / PageSize;
-        //     currPageEntry = getPageTableEntry(physPageInfo);
-        //     currPageEntry->physicalPage = ejectPage->physicalPage;
-        //     loadPageToCurrVictim(virtAddr);
-        //     nextVictim = (nextVictim + 1) % NumPhysPages;
-        // } else {
-        //     //We assume this page is not occupied by any process space
-        //     physPageInfo->space = currentThread->space;
-        //     physPageInfo->pageTableIndex = virtAddr / PageSize;
-        //     currPageEntry = getPageTableEntry(physPageInfo);
-        //     currPageEntry->physicalPage = memoryManager->getPage();
-        //     loadPageToCurrVictim(virtAddr);
-        //     nextVictim = (nextVictim + 1) % NumPhysPages;
-        // }
 
 
         // if (physPageInfo->space != NULL){
