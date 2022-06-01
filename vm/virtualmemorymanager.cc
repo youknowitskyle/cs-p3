@@ -54,11 +54,11 @@ void VirtualMemoryManager::swapPageIn(int virtAddr)
 {
 
         TranslationEntry* currPageEntry;
-        if(nextVictim>= NumPhysPages) {//no more space available
-                fprintf(stderr, "Fatal error: No more space available\n");
-                exit(1);
-                return;
-        }
+        // if(nextVictim>= NumPhysPages) {//no more space available
+        //         fprintf(stderr, "Fatal error: No more space available\n");
+        //         exit(1);
+        //         return;
+        // }
 
         
 
