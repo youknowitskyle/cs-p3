@@ -60,14 +60,40 @@ void VirtualMemoryManager::swapPageIn(int virtAddr)
                 return;
         }
 
+        
+
         FrameInfo * physPageInfo = physicalMemoryInfo + nextVictim;
-        //We assume this page is not occupied by any process space
-        physPageInfo->space = currentThread->space;
-        physPageInfo->pageTableIndex = virtAddr / PageSize;
-        currPageEntry = getPageTableEntry(physPageInfo);
-        currPageEntry->physicalPage = memoryManager->getPage();
-        loadPageToCurrVictim(virtAddr);
-        nextVictim = nextVictim + 1;
+
+        if (physPageInfo->space != NULL){
+            while (1) {
+                physPageInfo = physicalMemoryInfo + nextVictim;
+                physPageInfo->space = currentThread->space;
+                physPageInfo->pageTableIndex = virtAddr / PageSize;
+
+                currPageEntry = getPageTableEntry(physPageInfo);
+                currPageEntry->physicalPage = memoryManager->getPage();
+
+                if (currPageEntry->use == FALSE) {
+                    if (currPageEntry->dirty) {
+                        writeToSwap((machine->mainMemory + currPageEntry->physicalPage * PageSize), PageSize, currPageEntry->locationOnDisk);
+                    }
+                    loadPageToCurrVictim(virtAddr);
+                    break;
+                }
+
+                currPageEntry->valid = FALSE;
+                nextVictim = (nextVictim + 1) % NumPhysPages;
+            }
+        } else {
+            //We assume this page is not occupied by any process space
+            physPageInfo->space = currentThread->space;
+            physPageInfo->pageTableIndex = virtAddr / PageSize;
+            currPageEntry = getPageTableEntry(physPageInfo);
+            currPageEntry->physicalPage = memoryManager->getPage();
+            loadPageToCurrVictim(virtAddr);
+            nextVictim = nextVictim + 1;
+            loadPageToCurrVictim(virtAddr);
+        }
 }
 
 
